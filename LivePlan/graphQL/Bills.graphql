@@ -1,0 +1,26 @@
+query TransactionsFilter {
+  company {
+    transactions (filterBy:"type='PURCHASE_BILL'") {
+      edges {
+        node  {
+          id
+          type
+          header {
+            contact {
+              profiles {
+                vendor {
+                  contact {
+                    id
+                  }
+                }
+              }
+            }
+          }
+          externalIds {
+            localId
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+mutation TransactionsCreate($transactions_create: CreateTransactions_TransactionInput!) {
+    createTransactions_Transaction(input: $transactions_create) {
+        clientMutationId
+        transactionsTransactionEdge {
+            node {
+                id
+                header {
+                    amount
+                    txnDate
+                }
+            }
+        }
+    }
+}
