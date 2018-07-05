@@ -1,0 +1,42 @@
+query CompanyQuery {
+  company {
+    transactions(with:"txnTypeFilter='bill' && dateRange='custom' && lowDate='2018-06-20' && highDate='2018-06-28'")  {
+      edges {
+        node {
+          type
+          header {
+            txnStatus
+            txnDate
+            amount
+          }
+          meta {
+            created
+            updated
+          }
+          id
+          lines {
+            itemLines {
+
+            edges {
+              node {
+
+              traits {
+                item {
+                  item {
+                    name
+                    fullName
+                    type
+
+                  }
+                }
+              }
+
+              }}
+
+            }
+          }
+        }
+      }
+    }
+  }
+}
