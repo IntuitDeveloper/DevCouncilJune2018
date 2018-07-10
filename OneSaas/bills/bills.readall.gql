@@ -1,0 +1,58 @@
+﻿query RetrieveBill {
+  company {
+    transactions(filterBy: "type='PURCHASE_BILL'") {
+      edges {
+        node {
+          id
+          type
+          header {
+            referenceNumber
+            contact {
+              displayName
+              profiles {
+                vendor {
+                  contact {
+                    id
+                    displayName
+                  }
+                }
+              }
+            }
+          }
+          externalIds {
+            localId
+          }
+          lines {
+            itemLines {
+              edges {
+                node {
+                  sequence
+                  description
+                  amount
+                  traits {
+                    item {
+                      quantity
+                      rate
+                      item {
+                        name
+                        fullName
+                        type
+                        sku
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          traits {
+            balance {
+              balance
+              dueDate
+            }
+          }
+        }
+      }
+    }
+  }
+}

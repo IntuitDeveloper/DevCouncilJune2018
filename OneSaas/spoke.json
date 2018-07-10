@@ -1,0 +1,52 @@
+﻿{
+    "$schema": "https://sandbox.onesaas.com/schemas/1.0/spoke.json",
+    "Name": "QuickBooksOnline",
+    "NormalizedName": "quickbooksonline",
+    "UniqueKey": "382B5579-82CD-4BB8-A120-3E04197311D1",
+    "PluginKey": "542B5579-92CD-4BB8-A120-3E04197311D2",
+    "Category": "Accounting",
+    //
+    "Events": {
+        "connection:init": [
+        ],
+        "connection:connected": [
+            // This event happens when we first connect to QBO
+            // Trigger the download the reference data that needs to be used in the configuration screens
+            {
+                "resource:retrieveall": "taxcode:taxcodes"
+            },
+            // Removed some lines here ...
+            {
+                "resource:retrieveall": "configurationproperty:companydefaults"
+            }
+        ],
+        "sync:starting": [
+            // This event happens each time we perform a sync with QBO
+            // Download the reference data that might have changed (e.g. new account, enabled multicurrency, ...)
+            {
+                "resource:retrieveall": "configurationproperty:companyinfo"
+            },
+            // Removed some lines here ...
+            {
+                "resource:retrieveall": "classification:locations"
+            },
+        ],
+        "refresh:taxcodes": [
+            // Trigger used to refresh the data of the dropdowns in the UI
+            {
+                "resource:retrieveall": "taxcode:taxcodes"
+            }
+        ],
+        "refresh:accounts": [
+            {
+            // Trigger used to refresh the data of the dropdowns in the UI
+            "resource:retrieveall": "financialaccount:accounts"
+            }
+        ],
+        "trigger:disconnect": [
+            {
+                "resource:retrieveall": "configurationproperty:disconnect"
+            }
+        ]
+    }
+}
