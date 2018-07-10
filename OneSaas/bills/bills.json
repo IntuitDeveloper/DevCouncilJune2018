@@ -1,0 +1,60 @@
+﻿{
+    // This is the "data layer" part of the integration i.e. how do we communicate with the remote API
+    // 
+    // This gives us autocompletion in Visual Studio Code
+    "$schema": "https://sandbox.onesaas.com/schemas/1.0/resource.json",
+    //
+    // We declare a new resource called 'bills' of type transaction
+    "Name": "transaction:bills",
+    // Tell the engine that we expect a json response (as opposed to xml, csv, ...)
+    "Accept": "application/json",
+    // 
+    // Tell the engine how to retrieve (pull, download) bills from QBO
+    "system:retrieve": {
+        // Make a post request and save the result in a variable called Response
+        "$$Response|http(POST)": {
+            "Accept": "application/json",
+            "Path": "https://v4-e2e.api.intuit.com/graphql.json",
+            "Body": {
+                "query": "@.Gql('bill.readall')",
+                "variables": {
+                    "first": 10,
+                    // Paging would looks like this ($$Paging is a variable provided by OneSaas)
+                    // "after|when(!$$Paging.Current)": null,
+                    // "after|when($$Paging.Current)": "$$Paging.Current",
+                    "filter": null // "updated_at:'2018-02-25T23:51:39Z'",
+                },
+                "operationName": "RetrieveBills"
+            }
+        },
+        // Select the part of the json response we are interested in
+        "Output": "$$Response.data.company.transactions.edges[*]",
+        //
+        // At this point, each bill will then be transformed, one by one, using bills.transform.json 
+    },
+    //
+    // Tell the engine how to create a new bill in QBO
+    // Prepare the bill in order to send it to QBO
+    //
+    // This part was NOT tested but I left it there to give you an idea of what it would look like
+    "system:create": {
+        // Execution order is right to left:
+        // 1) make the http POST query
+        // 2) extract the jsonPath
+        // 3) declare that this is the output (in system:retrieve we used a variable instead, same thing)
+        "Output|select($.Body.data.createTransactions_Transaction)|http(POST)": {
+            "Accept": "application/json",
+            "Path": "https://v4-e2e.api.intuit.com/graphql.json",
+            // $$Entity is a json variable that contains the result of the transform
+            "Body": {
+                "query": "@.Gql('bill.create')",
+                "variables": {
+                    "bill": "$$Entity",
+                },
+                "operationName": "CreateBill"
+            }
+        }
+    }
+    // In a full integration there would be a couple of other system extention points for 
+    // updating, searching, deleting, ... but I ran out of time :)
+}

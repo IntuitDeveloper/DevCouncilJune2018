@@ -1,0 +1,93 @@
+{
+    "$schema": "https://sandbox.onesaas.com/schemas/1.0/transaction.transform.json",
+    //
+    // We get a single QBO bill as imput and we convert it to the OneSaas normalized format 
+    "system:retrieve": {
+        "$$bill": "$.node",
+        // RemoteUid is the QBO unique identifier for the bill. Helps us track data and manage dependencies.
+        "RemoteUid": "$$bill.id",
+        // Not that we use null propagation so no need to check for null (like ?. in C#)
+        "Number": "$$bill.header.referenceNumber",
+        "Contact": {
+            // Another RemoteUid to uniquely identify the vendor
+            "RemoteUid": "$$bill.header.contact.profiles.vendor.contact.id",
+            "FamilyName": "$$bill.header.contact.profiles.vendor.contact.displayName",
+        },
+        "CurrencyCode": "USD",
+        "Total": "$$bill.traits.balance.balance",
+        //
+        "Items|foreach($$edge in $$bill.lines.itemLines.edges)": [
+            {
+                "$$line": "$$edge.node",
+                //
+                // Dependency: this will ensure we link the correct product to this line item
+                // If the product is not in OneSaas yet, we will download it from QBO
+                // This process uses a different set of json file for the product transform and api layer
+                "Product": "@.Require.ByRemoteUid('product:products', $$line.traits.item.item.id)",
+                //
+                "Description": "$$line.description",
+                "ProductName": "$$line.traits.item.item.name",
+                "Quantity": "$$line.traits.item.quantity",
+                "UnitPrice": "$$line.traits.item.rate",
+                // ...
+            }
+        ],
+        // A complete integration would have a lot more stuff going on here
+        // ...
+    },
+    //
+    // Prepare the bill in order to send it to QBO
+    //
+    // This part was NOT tested but I left it there to give you an idea of what it would look like
+    "system:create": {
+        "clientMutationId": "@.Guid()",
+        "transactionsTransaction": {
+            "type": "PURCHASE_BILL",
+            "header": {
+                "privateMemo": "$.Notes",
+                // Making sure the length of the field does not exceed QBO's max length 
+                "referenceNumber": "$.ReferenceNumber|cut21",
+                "amount": "$.Total",
+                "txnDate": "$.Date",
+                "contact": {
+                    // Dependency: this will get the vendor id
+                    // If the vendor is not in QBO yet, we will search for it or create it in QBO
+                    // This process uses a different set of json file for the vendor transform and api layer
+                    "id": "@.Require.RemoteUid('contactwithorganization:vendors', $.Contact)"
+                }
+            },
+            "traits": {
+                "tax": {
+                    //
+                    // We can access values saved in the account configuration
+                    "$$country": "@.Config('country')",
+                    // Conditional operator
+                    "taxType|when($$country != US)|when($.TaxType == 'TaxInclusive')": "INCLUSIVE",
+                    "taxType|when($$country != US)|when($.TaxType == 'TaxExclusive')": "EXCLUSIVE",
+                }
+            },
+            "lines": {
+                // Loops will iterate through the input and append the result to the output
+                "itemLines|foreach($$line in $.Items)": [
+                    {
+                        "amount": "$$line.LineTotal",
+                        "description": "$$line.Description",
+                        "traits": {
+                            "item": {
+                                "quantity": "$$line.quantity",
+                                "rate": "$$line.Price",
+                                "item": {
+                                    // Dependency: this will get the product id
+                                    // Depending on the configuration we can create the product in QBO
+                                    // or stop the bill from being created with an error saying the product did not exist
+                                    "id": "@.Require.RemoteUid('product:products', $$line.Product)"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+        // ...
+    }
+}

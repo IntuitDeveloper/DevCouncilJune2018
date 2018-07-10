@@ -1,0 +1,14 @@
+﻿mutation TransactionsCreate($bill: CreateTransactions_TransactionInput!) {
+  createTransactions_Transaction(input: $bill) {
+    clientMutationId
+    transactionsTransactionEdge {
+      node {
+        id
+        header {
+          referenceNumber
+          amount
+        }
+      }
+    }
+  }
+}
