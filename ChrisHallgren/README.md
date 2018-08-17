@@ -6,6 +6,8 @@ This app is hard coded with the Bearer Auth token `qbo_auth => 'Bearer: ...'` in
 
 This app is hard coded with the Global ID `qbo_global_id` in the Config/app.php
 
+Source code is located in `/src/Command/UseCase(#)Step(#)Command.php`
+
 ## Usage
 clone repo and run `composer install`
 To use this demo modify the Config/app.php and add the `qbo_auth` Bearer token and add `qbo_global_id`. All commands are run from a command link
